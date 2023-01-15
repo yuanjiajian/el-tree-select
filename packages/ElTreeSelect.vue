@@ -155,12 +155,9 @@ export default {
       const tree = await this.getTree()
       return tree.store.nodesMap
     },
-    getTree() {
-      return new Promise((resolve) => {
-        this.$nextTick(() => {
-          resolve(this.treeLazy ? this.$refs.lazyTree : this.$refs.tree)
-        })
-      })
+    async getTree() {
+      await this.$nextTick()
+      return this.treeLazy ? this.$refs.lazyTree : this.$refs.tree
     }
   }
 }
