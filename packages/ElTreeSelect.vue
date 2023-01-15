@@ -123,41 +123,36 @@ export default {
         } else {
           this.isShowCheckbox = false
         }
-        // TODO  先执行此方法再执行懒加载方法，导致数据未能获取到
-        setTimeout(() => {
-          this.setLabelName(n)
-        }, 2000)
       },
       immediate: true,
       deep: true
     }
   },
+  mounted() {
+    this.initLabelName()
+  },
   methods: {
-    async setLabelName(value) {
-      const nodesMap = await this.getNodesMap()
-      if (this.isShowCheckbox) {
-        const labelNameList = []
-        Object.keys(nodesMap).map(key => {
-          if (value.includes(key)) {
-            labelNameList.push(nodesMap[key].data[this.treeProps.label])
-          }
-        })
-        this.labelName = labelNameList
-      } else {
-        Object.keys(nodesMap).map(key => {
-          if (value === key) {
-            this.labelName = nodesMap[key].data[this.treeProps.label]
-          }
-        })
-      }
-    },
-    async getNodesMap() {
-      const tree = await this.getTree()
-      return tree.store.nodesMap
-    },
-    async getTree() {
-      await this.$nextTick()
-      return this.treeLazy ? this.$refs.lazyTree : this.$refs.tree
+    initLabelName() {
+      this.$watch(() => {
+        return this.treeLazy ? this.$refs.lazyTree.store : this.$refs.tree.store
+      }, (n) => {
+        const nodesMap = n.nodesMap
+        if (this.isShowCheckbox) {
+          const labelNameList = []
+          Object.keys(nodesMap).map(key => {
+            if (this.value.includes(key)) {
+              labelNameList.push(nodesMap[key].data[this.treeProps.label])
+            }
+          })
+          this.labelName = labelNameList
+        } else {
+          Object.keys(nodesMap).map(key => {
+            if (this.value === key) {
+              this.labelName = nodesMap[key].data[this.treeProps.label]
+            }
+          })
+        }
+      }, { immediate: true, deep: true })
     }
   }
 }
