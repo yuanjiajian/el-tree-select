@@ -129,10 +129,10 @@ export default {
     }
   },
   mounted() {
-    this.initLabelName()
+    this.updateLabelName()
   },
   methods: {
-    initLabelName() {
+    updateLabelName() {
       this.$watch(() => {
         return this.treeLazy ? this.$refs.lazyTree.store : this.$refs.tree.store
       }, (n) => {
