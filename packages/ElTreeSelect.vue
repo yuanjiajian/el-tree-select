@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
   <el-select
+    ref="select"
     v-model="labelName"
     :multiple="isShowCheckbox"
     placeholder="请选择"
@@ -14,6 +15,9 @@
         :props="treeProps"
         :show-checkbox="isShowCheckbox"
         :check-strictly="isCheckStrictly"
+        :expand-on-click-node="false"
+        @node-click="handleNodeClick"
+        @check-change="handleCheckChange"
       />
       <el-tree
         v-if="treeLazy"
@@ -24,6 +28,9 @@
         :lazy="treeLazy"
         :show-checkbox="isShowCheckbox"
         :check-strictly="isCheckStrictly"
+        :expand-on-click-node="false"
+        @node-click="handleNodeClick"
+        @check-change="handleCheckChange"
       />
     </template>
   </el-select>
@@ -130,6 +137,7 @@ export default {
   },
   mounted() {
     this.updateLabelName()
+    this.updateCheckedNode()
   },
   methods: {
     updateLabelName() {
@@ -153,6 +161,21 @@ export default {
           })
         }
       }, { immediate: true, deep: true })
+    },
+    updateCheckedNode() {
+      //
+    },
+    handleNodeClick(data) {
+      if (!this.isShowCheckbox) {
+        this.$emit('change', data[this.treeNodeKey])
+        this.$refs.select.blur()
+      }
+    },
+    handleCheckChange() {
+      if (this.isShowCheckbox) {
+        const data = this.treeLazy ? this.$refs.lazyTree.getCheckedNodes() : this.$refs.tree.getCheckedNodes()
+        this.$emit('change', data.map(item => item[this.treeNodeKey]))
+      }
     }
   }
 }
