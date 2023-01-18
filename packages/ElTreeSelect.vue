@@ -5,6 +5,7 @@
     v-model="labelName"
     :multiple="isShowCheckbox"
     placeholder="请选择"
+    @remove-tag="removeTag"
   >
     <template #empty>
       <el-tree
@@ -16,6 +17,7 @@
         :show-checkbox="isShowCheckbox"
         :check-strictly="isCheckStrictly"
         :expand-on-click-node="false"
+        highlight-current
         @node-click="handleNodeClick"
         @check-change="handleCheckChange"
       />
@@ -29,6 +31,7 @@
         :show-checkbox="isShowCheckbox"
         :check-strictly="isCheckStrictly"
         :expand-on-click-node="false"
+        highlight-current
         @node-click="handleNodeClick"
         @check-change="handleCheckChange"
       />
@@ -133,6 +136,14 @@ export default {
       },
       immediate: true,
       deep: true
+    },
+    labelName: {
+      handler() {
+        if (!this.isShowCheckbox) {
+          this.updateCheckedNode()
+        }
+      },
+      deep: true
     }
   },
   mounted() {
@@ -163,7 +174,12 @@ export default {
       }, { immediate: true, deep: true })
     },
     updateCheckedNode() {
-      //
+      this.$watch(() => {
+        return this.value
+      }, (n) => {
+        const tree = this.treeLazy ? this.$refs.lazyTree : this.$refs.tree
+        this.isShowCheckbox ? tree.setCheckedKeys(n) : tree.setCurrentKey(n)
+      }, { immediate: true, deep: true })
     },
     handleNodeClick(data) {
       if (!this.isShowCheckbox) {
@@ -176,6 +192,9 @@ export default {
         const data = this.treeLazy ? this.$refs.lazyTree.getCheckedNodes() : this.$refs.tree.getCheckedNodes()
         this.$emit('change', data.map(item => item[this.treeNodeKey]))
       }
+    },
+    removeTag(data) {
+      debugger
     }
   }
 }
