@@ -4,8 +4,10 @@
     ref="select"
     v-model="labelName"
     :multiple="isShowCheckbox"
+    :clearable="isClearable"
     placeholder="请选择"
     @remove-tag="removeTag"
+    @clear="clear"
   >
     <template #empty>
       <el-tree
@@ -17,6 +19,7 @@
         :show-checkbox="isShowCheckbox"
         :check-strictly="isCheckStrictly"
         :expand-on-click-node="false"
+        :default-expanded-keys="defaultExpandedKeys"
         highlight-current
         @node-click="handleNodeClick"
         @check-change="handleCheckChange"
@@ -31,6 +34,7 @@
         :show-checkbox="isShowCheckbox"
         :check-strictly="isCheckStrictly"
         :expand-on-click-node="false"
+        :default-expanded-keys="defaultExpandedKeys"
         highlight-current
         @node-click="handleNodeClick"
         @check-change="handleCheckChange"
@@ -112,11 +116,19 @@ export default {
     },
     treeLazy: {
       type: Boolean,
-      default: true
+      default: false
     },
     isCheckStrictly: {
       type: Boolean,
       default: false
+    },
+    isClearable: {
+      type: Boolean,
+      default: true
+    },
+    defaultExpandedKeys: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -194,7 +206,21 @@ export default {
       }
     },
     removeTag(data) {
-      debugger
+      const nodes = Object.values(this.treeLazy ? this.$refs.lazyTree.store.nodesMap : this.$refs.tree.store.nodesMap)
+      nodes.forEach(node => {
+        if (node.data[this.treeProps.label] === data) {
+          node.checked = false
+          node.isCurrent = false
+        }
+      })
+    },
+    clear() {
+      const nodes = Object.values(this.treeLazy ? this.$refs.lazyTree.store.nodesMap : this.$refs.tree.store.nodesMap)
+      nodes.forEach(node => {
+        node.checked = false
+        node.isCurrent = false
+      })
+      this.$emit('change', '')
     }
   }
 }
