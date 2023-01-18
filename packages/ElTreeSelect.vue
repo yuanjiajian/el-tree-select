@@ -206,13 +206,18 @@ export default {
       }
     },
     removeTag(data) {
-      const nodes = Object.values(this.treeLazy ? this.$refs.lazyTree.store.nodesMap : this.$refs.tree.store.nodesMap)
+      const treeStore = this.treeLazy ? this.$refs.lazyTree.store : this.$refs.tree.store
+      const nodes = Object.values(treeStore.nodesMap)
+      let values = []
       nodes.forEach(node => {
         if (node.data[this.treeProps.label] === data) {
+          treeStore.checkStrictly = true
           node.checked = false
           node.isCurrent = false
+          values = this.value.filter(v => v !== node.data[this.treeNodeKey])
         }
       })
+      this.$emit('change', values)
     },
     clear() {
       const nodes = Object.values(this.treeLazy ? this.$refs.lazyTree.store.nodesMap : this.$refs.tree.store.nodesMap)
@@ -220,7 +225,7 @@ export default {
         node.checked = false
         node.isCurrent = false
       })
-      this.$emit('change', '')
+      this.$emit('change', this.isShowCheckbox ? [] : '')
     }
   }
 }
