@@ -17,7 +17,7 @@
         :node-key="treeNodeKey"
         :props="treeProps"
         :show-checkbox="isShowCheckbox"
-        :check-strictly="isCheckStrictly"
+        check-strictly
         :expand-on-click-node="false"
         :default-expanded-keys="defaultExpandedKeys"
         highlight-current
@@ -29,10 +29,10 @@
         ref="lazyTree"
         :node-key="treeNodeKey"
         :props="treeProps"
-        :load="treeLoad"
+        :load="treeLoadFun"
         :lazy="treeLazy"
         :show-checkbox="isShowCheckbox"
-        :check-strictly="isCheckStrictly"
+        check-strictly
         :expand-on-click-node="false"
         :default-expanded-keys="defaultExpandedKeys"
         highlight-current
@@ -44,6 +44,7 @@
 </template>
 
 <script>
+import XEUtils from 'xe-utils'
 
 export default {
   model: {
@@ -100,25 +101,16 @@ export default {
       type: Function,
       default: (node, resolve) => {
         setTimeout(() => {
-          resolve([
-            {
-              label: `测试${parseInt(Math.random() * 100)}`,
-              id: '1'
-            },
-            {
-              label: `测试${parseInt(Math.random() * 100)}`,
-              id: `${Math.random() * 100}`,
-              isLeaf: true
-            }
-          ])
+          resolve(dealNavLsit([
+            { id: '1', label: '测试', parentId: '0' },
+            { id: '1-1', parentId: '1', label: '测试-1', isLeaf: true },
+            { id: '1-2', parentId: '1', label: '测试-2', isLeaf: true },
+            { id: '2', parentId: '0', label: '测试2', isLeaf: true }
+          ], node.data ? node.data.id : '0'))
         }, 1000)
       }
     },
     treeLazy: {
-      type: Boolean,
-      default: false
-    },
-    isCheckStrictly: {
       type: Boolean,
       default: false
     },
@@ -134,7 +126,8 @@ export default {
   data() {
     return {
       isShowCheckbox: false,
-      labelName: ''
+      labelName: '',
+      treeDataList: []
     }
   },
   watch: {
@@ -149,75 +142,75 @@ export default {
       immediate: true,
       deep: true
     },
-    labelName: {
+    treeDataList: {
       handler() {
-        if (!this.isShowCheckbox) {
-          this.updateCheckedNode()
-        }
+        this.updateLabelName()
+        this.updateCheckedNode()
       },
       deep: true
     }
   },
   mounted() {
-    this.updateLabelName()
-    this.updateCheckedNode()
+    if (!this.treeLazy) {
+      this.treeDataList = this.treeData
+    }
   },
   methods: {
-    updateLabelName() {
-      this.$watch(() => {
-        return this.treeLazy ? this.$refs.lazyTree.store : this.$refs.tree.store
-      }, (n) => {
-        const nodesMap = n.nodesMap
-        if (this.isShowCheckbox) {
-          const labelNameList = []
-          Object.keys(nodesMap).map(key => {
-            if (this.value.includes(key)) {
-              labelNameList.push(nodesMap[key].data[this.treeProps.label])
+    treeLoadFun(node, resolve) {
+      new Promise((resolve) => {
+        this.treeLoad(node, resolve)
+      }).then((data) => {
+        const _data = XEUtils.clone(data, true)
+        if (node.data) {
+          const treeDataList = XEUtils.clone(this.treeDataList, true)
+          XEUtils.mapTree(treeDataList, item => {
+            if (item[this.treeNodeKey] === node.data[this.treeNodeKey]) {
+              item[this.treeProps.children] = _data
+              return item
+            } else {
+              return item
             }
-          })
-          this.labelName = labelNameList
+          }, { children: this.treeProps.children, mapChildren: this.treeProps.children })
+          this.treeDataList = treeDataList
         } else {
-          Object.keys(nodesMap).map(key => {
-            if (this.value === key) {
-              this.labelName = nodesMap[key].data[this.treeProps.label]
-            }
-          })
+          this.treeDataList = _data
         }
-      }, { immediate: true, deep: true })
+        resolve(data)
+      })
+    },
+    updateLabelName() {
+      if (this.isShowCheckbox) {
+        const labelName = []
+        this.value.forEach(val => {
+          const data = XEUtils.findTree(this.treeDataList, node => node[this.treeNodeKey] === val, { children: this.treeProps.children })
+          if (data && data.item) {
+            labelName.push(data.item[this.treeProps.label])
+          }
+        })
+        this.labelName = labelName
+      } else {
+        let labelName = ''
+        const data = XEUtils.findTree(this.treeDataList, node => node[this.treeNodeKey] === this.value, { children: this.treeProps.children })
+        if (data && data.item) {
+          labelName = data.item[this.treeProps.label]
+        }
+        this.labelName = labelName
+      }
     },
     updateCheckedNode() {
-      this.$watch(() => {
-        return this.value
-      }, (n) => {
-        const tree = this.treeLazy ? this.$refs.lazyTree : this.$refs.tree
-        this.isShowCheckbox ? tree.setCheckedKeys(n) : tree.setCurrentKey(n)
-      }, { immediate: true, deep: true })
+      const tree = this.treeLazy ? this.$refs.lazyTree : this.$refs.tree
+      this.isShowCheckbox ? tree.setCheckedKeys(this.value) : tree.setCurrentKey(this.value)
     },
-    handleNodeClick(data) {
-      if (!this.isShowCheckbox) {
-        this.$emit('change', data[this.treeNodeKey])
-        this.$refs.select.blur()
+    removeTag(tag) {
+      const data = XEUtils.findTree(this.treeDataList, node => node[this.treeProps.label] === tag, { children: this.treeProps.children })
+      if (data && data.item) {
+        const value = XEUtils.clone(this.value, true)
+        value.splice(value.indexOf(data.item[this.treeNodeKey]), 1)
+        this.$emit('change', value)
+        this.$nextTick(() => {
+          this.updateCheckedNode()
+        })
       }
-    },
-    handleCheckChange() {
-      if (this.isShowCheckbox) {
-        const data = this.treeLazy ? this.$refs.lazyTree.getCheckedNodes() : this.$refs.tree.getCheckedNodes()
-        this.$emit('change', data.map(item => item[this.treeNodeKey]))
-      }
-    },
-    removeTag(data) {
-      const treeStore = this.treeLazy ? this.$refs.lazyTree.store : this.$refs.tree.store
-      const nodes = Object.values(treeStore.nodesMap)
-      let values = []
-      nodes.forEach(node => {
-        if (node.data[this.treeProps.label] === data) {
-          treeStore.checkStrictly = true
-          node.checked = false
-          node.isCurrent = false
-          values = this.value.filter(v => v !== node.data[this.treeNodeKey])
-        }
-      })
-      this.$emit('change', values)
     },
     clear() {
       const nodes = Object.values(this.treeLazy ? this.$refs.lazyTree.store.nodesMap : this.$refs.tree.store.nodesMap)
@@ -226,9 +219,37 @@ export default {
         node.isCurrent = false
       })
       this.$emit('change', this.isShowCheckbox ? [] : '')
+    },
+    handleNodeClick(node) {
+      if (!this.isShowCheckbox) {
+        this.$emit('change', node[this.treeNodeKey])
+        this.$nextTick(() => {
+          this.updateLabelName()
+        })
+        this.$refs.select.blur()
+      }
+    },
+    handleCheckChange() {
+      if (this.isShowCheckbox) {
+        const data = this.treeLazy ? this.$refs.lazyTree.getCheckedNodes() : this.$refs.tree.getCheckedNodes()
+        this.$emit('change', data.map(item => item[this.treeNodeKey]))
+        this.$nextTick(() => {
+          this.updateLabelName()
+        })
+      }
     }
   }
 }
-</script>
 
+function dealNavLsit(data, parentId) {
+  var tree = []
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].parentId === parentId) {
+      var obj = data[i]
+      tree.push(obj)
+    }
+  }
+  return tree
+}
+</script>
 <style></style>

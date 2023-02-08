@@ -2,7 +2,7 @@
   <div id="app">
     <!-- <img alt="Vue logo" src="./assets/logo.png">
     <HelloWorld msg="Welcome to Your Vue.js App" /> -->
-    <ElTreeSelect v-model="value" />
+    <ElTreeSelect v-model="value" :default-expanded-keys="['1','1-1']" />
   </div>
 </template>
 
@@ -17,7 +17,7 @@ export default {
   },
   data() {
     return {
-      value: ['1']
+      value: '1-1'
     }
   }
 }
