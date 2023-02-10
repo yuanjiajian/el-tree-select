@@ -2,7 +2,7 @@
   <div id="app">
     <!-- <img alt="Vue logo" src="./assets/logo.png">
     <HelloWorld msg="Welcome to Your Vue.js App" /> -->
-    <ElTreeSelect v-model="value" :default-expanded-keys="['1','1-1']" />
+    <ElTreeSelect v-model="value" />
   </div>
 </template>
 

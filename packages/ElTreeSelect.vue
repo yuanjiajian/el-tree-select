@@ -1,46 +1,61 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
-  <el-select
-    ref="select"
-    v-model="labelName"
-    :multiple="isShowCheckbox"
-    :clearable="isClearable"
-    placeholder="请选择"
-    @remove-tag="removeTag"
-    @clear="clear"
-  >
-    <template #empty>
-      <el-tree
-        v-if="!treeLazy"
-        ref="tree"
-        :data="treeData"
-        :node-key="treeNodeKey"
-        :props="treeProps"
-        :show-checkbox="isShowCheckbox"
-        check-strictly
-        :expand-on-click-node="false"
-        :default-expanded-keys="defaultExpandedKeys"
-        highlight-current
-        @node-click="handleNodeClick"
-        @check-change="handleCheckChange"
-      />
-      <el-tree
-        v-if="treeLazy"
-        ref="lazyTree"
-        :node-key="treeNodeKey"
-        :props="treeProps"
-        :load="treeLoadFun"
-        :lazy="treeLazy"
-        :show-checkbox="isShowCheckbox"
-        check-strictly
-        :expand-on-click-node="false"
-        :default-expanded-keys="defaultExpandedKeys"
-        highlight-current
-        @node-click="handleNodeClick"
-        @check-change="handleCheckChange"
-      />
-    </template>
-  </el-select>
+  <div>
+    <el-select
+      v-if="isEdit"
+      ref="select"
+      v-model="labelName"
+      :multiple="isShowCheckbox"
+      :clearable="isClearable"
+      :disabled="isDisabled"
+      placeholder="请选择"
+      @remove-tag="removeTag"
+      @clear="clear"
+    >
+      <template #empty>
+        <el-tree
+          v-if="!treeLazy"
+          ref="tree"
+          :data="treeData"
+          :node-key="treeNodeKey"
+          :props="treeProps"
+          :show-checkbox="isShowCheckbox"
+          check-strictly
+          :expand-on-click-node="false"
+          :default-expanded-keys="defaultExpandedKeys"
+          highlight-current
+          @node-click="handleNodeClick"
+          @check-change="handleCheckChange"
+        />
+        <el-tree
+          v-if="treeLazy"
+          ref="lazyTree"
+          :node-key="treeNodeKey"
+          :props="treeProps"
+          :load="treeLoadFun"
+          :lazy="treeLazy"
+          :show-checkbox="isShowCheckbox"
+          check-strictly
+          :expand-on-click-node="false"
+          :default-expanded-keys="defaultExpandedKeys"
+          highlight-current
+          @node-click="handleNodeClick"
+          @check-change="handleCheckChange"
+        />
+      </template>
+    </el-select>
+    <div v-else class="filter_form " style="height: 36px">
+      <div v-if="isEllipsis" class="ellipsis">
+        <el-tooltip class="item" effect="dark" :content="labelName.toString()+''" placement="top-start">
+          <span style="font-size: 12px;">{{ labelName.toString() }}</span>
+        </el-tooltip>
+      </div>
+      <div v-if="!isEllipsis" style="font-size: 12px;">
+        {{ labelName.toString() }}
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <script>
@@ -55,6 +70,22 @@ export default {
     value: {
       type: [String, Array],
       default: ''
+    },
+    isClearable: {
+      type: Boolean,
+      default: true
+    },
+    isDisabled: {
+      type: Boolean,
+      default: false
+    },
+    isEdit: {
+      type: Boolean,
+      default: true
+    },
+    isEllipsis: {
+      type: Boolean,
+      default: true
     },
     treeData: {
       type: Array,
@@ -113,10 +144,6 @@ export default {
     treeLazy: {
       type: Boolean,
       default: false
-    },
-    isClearable: {
-      type: Boolean,
-      default: true
     },
     defaultExpandedKeys: {
       type: Array,
